@@ -1,0 +1,27 @@
+# 1. เริ่มต้นด้วย PHP 8.2 FPM (Alpine Linux เพื่อให้ขนาดเล็กและเบา)
+FROM php:8.2-fpm-alpine
+
+# 2. ติดตั้ง NGINX, Supervisor และ dependencies ของ MySQL
+RUN apk add --no-cache nginx supervisor
+
+# 3. ติดตั้ง Extension pdo_mysql สำหรับเชื่อมต่อ MySQL
+RUN docker-php-ext-install pdo pdo_mysql
+
+# 4. สร้าง Directory สำหรับรัน NGINX และเก็บ Log
+RUN mkdir -p /run/nginx /var/log/supervisor /var/www/html
+
+# 5. คัดลอกคอนฟิก NGINX และ Supervisor เข้าไปแทนที่
+COPY default.conf /etc/nginx/http.d/default.conf
+COPY supervisord.conf /etc/supervisord.conf
+
+# 6. คัดลอกไฟล์โค้ดโปรเจกต์
+COPY index.php /var/www/html/
+
+# 7. ปรับสิทธิ์โฟลเดอร์ให้ user nobody (Alpine Web User) เข้าถึงได้
+RUN chown -R nobody:nobody /var/www/html
+
+# 8. เปิดพอร์ต 80
+EXPOSE 80
+
+# 9. ให้ Supervisor เป็นคำสั่งเริ่มต้นเพื่อเปิด NGINX + PHP-FPM
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

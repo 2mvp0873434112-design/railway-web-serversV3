@@ -1,0 +1,21 @@
+# 1. ใช้อิมเมจ Base จาก PHP 8.2 ที่มี Apache ติดตั้งมาให้แล้ว
+FROM php:8.2-apache
+
+# 2. ติดตั้ง Extension pdo และ pdo_mysql เพื่อให้เชื่อมต่อ MySQL ได้
+RUN docker-php-ext-install pdo pdo_mysql
+
+# 3. ใช้ MPM ที่เข้ากันได้กับ mod_php และป้องกันการโหลด MPM ซ้ำ
+RUN a2dismod mpm_event mpm_worker && a2enmod mpm_prefork rewrite
+
+# 4. คัดลอกโค้ดเว็บไปยัง DocumentRoot ของ Apache
+COPY index.php /var/www/html/
+
+# 5. กำหนดสิทธิ์โฟลเดอร์ให้ www-data ใช้งานได้
+RUN chown -R www-data:www-data /var/www/html
+
+# 6. ตั้งค่าพอร์ต (Railway กำหนด PORT อัตโนมัติเป็น 80)
+ENV PORT=80
+EXPOSE 80
+
+# 7. คำสั่งรัน Apache เป็น Foreground Process
+CMD ["apache2-foreground"]
